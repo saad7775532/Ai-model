@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Autopilot Research System — Perplexity → Claude → Make.com</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B1220;
+    --panel:#111B2E;
+    --panel-line:#1E2A42;
+    --text:#E7ECF3;
+    --text-dim:#8B98AF;
+    --teal:#2DD4BF;   /* Perplexity node */
+    --amber:#F0B429;  /* Claude node */
+    --violet:#8B7CF6; /* Make.com node */
+    --radius:10px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter', sans-serif;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{font-family:'Space Grotesk', sans-serif; letter-spacing:-0.01em;}
+  code, .mono{font-family:'JetBrains Mono', monospace;}
+  a{color:var(--teal);}
+  .wrap{max-width:920px; margin:0 auto; padding:0 24px;}
+ 
+  /* ---------- NAV ---------- */
+  nav{
+    position:sticky; top:0; z-index:50;
+    background:rgba(11,18,32,0.85);
+    backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--panel-line);
+  }
+  nav .wrap{display:flex; align-items:center; justify-content:space-between; height:60px;}
+  .brand{font-family:'Space Grotesk'; font-weight:600; font-size:15px; letter-spacing:0.02em;}
+  .brand span{color:var(--teal);}
+  nav ul{list-style:none; display:flex; gap:28px;}
+  nav a{color:var(--text-dim); text-decoration:none; font-size:14px; transition:color .2s;}
+  nav a:hover{color:var(--text);}
+  @media (max-width:640px){ nav ul{display:none;} }
+ 
+  /* ---------- HERO ---------- */
+  header.hero{padding:88px 0 64px; position:relative; overflow:hidden;}
+  .eyebrow{
+    font-family:'JetBrains Mono'; font-size:12px; letter-spacing:0.12em;
+    color:var(--teal); text-transform:uppercase; margin-bottom:18px;
+    display:flex; align-items:center; gap:10px;
+  }
+  .eyebrow::before{content:''; width:18px; height:1px; background:var(--teal);}
+  h1.title{font-size:clamp(34px,5.5vw,54px); font-weight:700; line-height:1.08; max-width:760px;}
+  h1.title em{font-style:normal; color:var(--teal);}
+  .subtitle{color:var(--text-dim); font-size:17px; max-width:560px; margin-top:20px;}
+ 
+  /* ---------- PIPELINE (signature element) ---------- */
+  .pipeline{margin-top:64px; position:relative;}
+  .pipeline-track{
+    position:relative; height:2px; background:var(--panel-line);
+    border-radius:2px; margin:0 4%;
+  }
+  .pipeline-track::before{
+    content:''; position:absolute; top:0; left:0; height:100%; width:40%;
+    background:linear-gradient(90deg, transparent, var(--teal), var(--amber), var(--violet), transparent);
+    background-size:300% 100%;
+    animation:flow 4s linear infinite;
+    filter:blur(0.3px);
+  }
+  @keyframes flow{
+    0%{ background-position:0% 0%; left:-10%; }
+    100%{ background-position:300% 0%; left:100%; }
+  }
+  .nodes{display:flex; justify-content:space-between; margin-top:-13px; padding:0 4%;}
+  .node{
+    display:flex; flex-direction:column; align-items:center; gap:10px;
+    width:120px; text-align:center;
+  }
+  .node .dot{
+    width:26px; height:26px; border-radius:50%;
+    background:var(--panel); border:2px solid var(--c);
+    box-shadow:0 0 0 4px var(--bg), 0 0 18px -2px var(--c);
+    position:relative;
+  }
+  .node .dot::after{
+    content:''; position:absolute; inset:5px; border-radius:50%; background:var(--c);
+    animation:pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse{0%,100%{opacity:.55;} 50%{opacity:1;}}
+  .node span{font-size:13px; color:var(--text-dim); font-family:'JetBrains Mono';}
+  .node strong{font-size:14px; color:var(--text); font-family:'Space Grotesk';}
+  .n1{--c:var(--teal);} .n2{--c:var(--amber);} .n3{--c:var(--violet);} .n4{--c:#5EEAD4;}
+ 
+  /* ---------- SECTIONS ---------- */
+  section{padding:64px 0; border-top:1px solid var(--panel-line);}
+  .section-head{margin-bottom:36px;}
+  .num{
+    font-family:'JetBrains Mono'; font-size:12px; color:var(--text-dim);
+    letter-spacing:0.08em; margin-bottom:8px; display:block;
+  }
+  h2{font-size:clamp(24px,3vw,32px); font-weight:600;}
+  .lede{color:var(--text-dim); margin-top:10px; max-width:620px;}
+ 
+  /* role cards */
+  .roles{display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:32px;}
+  @media (max-width:720px){ .roles{grid-template-columns:1fr;} }
+  .role-card{
+    background:var(--panel); border:1px solid var(--panel-line); border-radius:var(--radius);
+    padding:22px; border-top:3px solid var(--c);
+  }
+  .role-card h3{font-size:16px; margin-bottom:8px;}
+  .role-card p{color:var(--text-dim); font-size:14px;}
+  .role-card .tag{
+    font-family:'JetBrains Mono'; font-size:11px; color:var(--c);
+    text-transform:uppercase; letter-spacing:0.08em; margin-bottom:10px; display:block;
+  }
+ 
+  /* module steps */
+  .step{
+    background:var(--panel); border:1px solid var(--panel-line); border-radius:var(--radius);
+    padding:26px; margin-bottom:18px;
+  }
+  .step-head{display:flex; align-items:center; gap:12px; margin-bottom:14px;}
+  .step-index{
+    width:30px; height:30px; border-radius:50%; background:var(--bg);
+    border:1px solid var(--panel-line); display:flex; align-items:center; justify-content:center;
+    font-family:'JetBrains Mono'; font-size:13px; color:var(--teal); flex-shrink:0;
+  }
+  .step h3{font-size:17px;}
+  .step p{color:var(--text-dim); font-size:14.5px; margin-bottom:12px;}
+  .step ul{margin:10px 0 12px 18px; color:var(--text-dim); font-size:14.5px;}
+  .step li{margin-bottom:5px;}
+ 
+  pre{
+    background:#0A1120; border:1px solid var(--panel-line); border-radius:8px;
+    padding:16px 18px; overflow-x:auto; font-size:13px; color:#B8E6DD;
+    position:relative; margin-top:6px;
+  }
+  pre .copy{
+    position:absolute; top:8px; right:10px; background:var(--panel-line); color:var(--text-dim);
+    border:none; border-radius:5px; font-family:'JetBrains Mono'; font-size:11px;
+    padding:4px 9px; cursor:pointer; transition:.15s;
+  }
+  pre .copy:hover{background:var(--teal); color:#08201C;}
+  .handoff-tag{
+    display:inline-flex; align-items:center; gap:6px; margin-top:10px;
+    font-family:'JetBrains Mono'; font-size:12px; color:var(--amber);
+  }
+  .handoff-tag::before{content:'↳'; color:var(--amber);}
+ 
+  /* checklist */
+  .checklist{list-style:none; margin-top:24px;}
+  .checklist li{
+    display:flex; gap:14px; padding:14px 0; border-bottom:1px solid var(--panel-line);
+    align-items:flex-start;
+  }
+  .checklist li:last-child{border-bottom:none;}
+  .checklist .n{
+    font-family:'JetBrains Mono'; color:var(--teal); font-size:13px; flex-shrink:0; width:20px;
+  }
+  .checklist strong{display:block; font-size:14.5px; margin-bottom:2px;}
+  .checklist span{color:var(--text-dim); font-size:14px;}
+ 
+  /* cost table */
+  table{width:100%; border-collapse:collapse; margin-top:24px; font-size:14px;}
+  th, td{text-align:left; padding:14px 10px; border-bottom:1px solid var(--panel-line);}
+  th{color:var(--text-dim); font-family:'JetBrains Mono'; font-weight:400; font-size:12px; text-transform:uppercase; letter-spacing:0.06em;}
+  td:first-child{color:var(--text); font-weight:500;}
+  td.dim{color:var(--text-dim);}
+ 
+  /* extend list */
+  .extend{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:28px;}
+  @media (max-width:640px){ .extend{grid-template-columns:1fr;} }
+  .extend div{
+    background:var(--panel); border:1px solid var(--panel-line); border-radius:var(--radius);
+    padding:16px 18px; font-size:14px; color:var(--text-dim); border-left:2px solid var(--violet);
+  }
+ 
+  footer{padding:48px 0 64px; border-top:1px solid var(--panel-line);}
+  footer .wrap{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;}
+  footer p{color:var(--text-dim); font-size:13px;}
+  .deploy-note{
+    background:var(--panel); border:1px solid var(--panel-line); border-radius:var(--radius);
+    padding:20px 22px; font-size:13.5px; color:var(--text-dim); margin-top:24px;
+  }
+  .deploy-note strong{color:var(--text); font-family:'JetBrains Mono'; font-size:12px; display:block; margin-bottom:8px; letter-spacing:0.04em;}
+ 
+  @media (prefers-reduced-motion: reduce){
+    .pipeline-track::before, .node .dot::after{animation:none;}
+  }
+</style>
+</head>
+<body>
+ 
+<nav>
+  <div class="wrap">
+    <div class="brand">autopilot<span>.research</span></div>
+    <ul>
+      <li><a href="#how">How it works</a></li>
+      <li><a href="#build">Build it</a></li>
+      <li><a href="#cost">Cost</a></li>
+      <li><a href="#extend">Extend</a></li>
+    </ul>
+  </div>
+</nav>
+ 
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">Perplexity · Claude · Make.com</div>
+    <h1 class="title">Your research, <em>delivered</em> every morning — without you lifting a finger.</h1>
+    <p class="subtitle">A three-agent pipeline: one finds current information, one turns it into a real summary, one runs the whole thing on a schedule. Set it up once.</p>
+ 
+    <div class="pipeline">
+      <div class="pipeline-track"></div>
+      <div class="nodes">
+        <div class="node n1"><div class="dot"></div><strong>Perplexity</strong><span>searches</span></div>
+        <div class="node n2"><div class="dot"></div><strong>Claude</strong><span>synthesizes</span></div>
+        <div class="node n3"><div class="dot"></div><strong>Make.com</strong><span>orchestrates</span></div>
+        <div class="node n4"><div class="dot"></div><strong>Inbox</strong><span>delivers</span></div>
+      </div>
+    </div>
+  </div>
+</header>
+ 
+<section id="how">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="num">01 — ROLES</span>
+      <h2>Three agents, one job each</h2>
+      <p class="lede">Each tool does the one thing it's actually best at. No tool tries to do another's job.</p>
+    </div>
+    <div class="roles">
+      <div class="role-card" style="--c:var(--teal)">
+        <span class="tag">Researcher</span>
+        <h3>Perplexity</h3>
+        <p>Runs live web searches and returns sourced, current findings. Not limited by a training cutoff — it's reading today's web, today.</p>
+      </div>
+      <div class="role-card" style="--c:var(--amber)">
+        <span class="tag">Analyst</span>
+        <h3>Claude</h3>
+        <p>Takes raw search output and turns it into something you'd actually want to read — structured, prioritized, and stripped of noise.</p>
+      </div>
+      <div class="role-card" style="--c:var(--violet)">
+        <span class="tag">Operator</span>
+        <h3>Make.com</h3>
+        <p>Triggers the whole run on a schedule and passes data between the other two. This is what makes it autopilot instead of a manual task.</p>
+      </div>
+    </div>
+  </div>
+</section>
+ 
+<section id="build">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="num">02 — BUILD</span>
+      <h2>The scenario, module by module</h2>
+      <p class="lede">Build one Make.com scenario with these four modules in order. Each one's output maps directly into the next one's input.</p>
+    </div>
+ 
+    <div class="step">
+      <div class="step-head"><div class="step-index">1</div><h3>Trigger — Schedule</h3></div>
+      <p>Built into Make. Set it to run daily, weekly, or whatever cadence fits your topic. This is the only step you interact with after setup — and only if you want to change the timing.</p>
+    </div>
+ 
+    <div class="step">
+      <div class="step-head"><div class="step-index">2</div><h3>HTTP → Perplexity API</h3></div>
+      <p>Perplexity has no native Make app, so use the HTTP module to call it directly.</p>
+      <ul>
+        <li>Method: <code>POST</code> → <code>https://api.perplexity.ai/chat/completions</code></li>
+        <li>Header: <code>Authorization: Bearer YOUR_PERPLEXITY_API_KEY</code></li>
+      </ul>
+      <pre><button class="copy" onclick="copyCode(this)">Copy</button>{
+  "model": "sonar-pro",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Find the most important news and developments from the last 24 hours on [YOUR TOPIC]. Include sources."
+    }
+  ]
+}</pre>
+      <div class="handoff-tag">Output text feeds directly into Module 3</div>
+    </div>
+ 
+    <div class="step">
+      <div class="step-head"><div class="step-index">3</div><h3>Anthropic → Create a Message</h3></div>
+      <p>Make has a native Claude app — connect your API key and select <code>claude-sonnet-4-6</code>.</p>
+      <pre><button class="copy" onclick="copyCode(this)">Copy</button>You are a research analyst. You will receive raw web search results.
+Turn them into a clean summary with:
+1. A 2-sentence executive summary at the top
+2. 3-6 bullet points of the most important findings
+3. Source links preserved
+4. Flag anything time-sensitive or requiring action
+Keep it under 400 words. No fluff.</pre>
+      <p style="margin-top:10px;">User message: map in the raw text output from Module 2.</p>
+      <div class="handoff-tag">Claude's reply is your finished summary — map it into Module 4</div>
+    </div>
+ 
+    <div class="step">
+      <div class="step-head"><div class="step-index">4</div><h3>Delivery</h3></div>
+      <p>Pick one, or run two in parallel from the same scenario:</p>
+      <ul>
+        <li><strong>Email</strong> — Gmail/Outlook module, Claude's output as the body</li>
+        <li><strong>Slack</strong> — post to a channel or DM yourself</li>
+        <li><strong>Notion</strong> — logs each run as a searchable archive page</li>
+      </ul>
+      <p>Most people run email for the daily nudge and Notion as the permanent archive.</p>
+    </div>
+  </div>
+</section>
+ 
+<section id="cost">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="num">03 — COST</span>
+      <h2>What this actually costs</h2>
+      <p class="lede">Nothing here has a subscription floor. You pay for what you use — for a single daily topic, that's usually a few dollars a month, total.</p>
+    </div>
+    <table>
+      <tr><th>Tool</th><th>Free tier</th><th>Typical monthly cost</th></tr>
+      <tr><td>Make.com</td><td class="dim">1,000 ops/month free</td><td class="dim">$0 for one daily topic</td></tr>
+      <tr><td>Perplexity API</td><td class="dim">Pay-as-you-go</td><td class="dim">~$1–3/month, light use</td></tr>
+      <tr><td>Claude API</td><td class="dim">Pay-as-you-go</td><td class="dim">~$2–3/month, light use</td></tr>
+    </table>
+  </div>
+</section>
+ 
+<section id="extend">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="num">04 — LATER</span>
+      <h2>Ways to extend this</h2>
+    </div>
+    <div class="extend">
+      <div>Run multiple Perplexity queries — one per topic — feeding into a single combined Claude summary.</div>
+      <div>Add a router module to send different topics to different Slack channels.</div>
+      <div>Add a second Claude call that scores each finding 1–10 for relevance and filters out the low scores.</div>
+      <div>Archive every run in Notion or Airtable to build a searchable history over time.</div>
+    </div>
+  </div>
+</section>
+ 
+<footer>
+  <div class="wrap" style="display:block;">
+    <div class="deploy-note">
+      <strong>DEPLOYING THIS PAGE</strong>
+      This is a single self-contained HTML file — no build step, no dependencies to install. Drag it into <a href="https://app.netlify.com/drop" target="_blank" rel="noopener">Netlify Drop</a> for an instant live link, push it to a GitHub repo and enable GitHub Pages, or upload it to Vercel. Any of these will have it live in under a minute.
+    </div>
+    <p style="margin-top:20px;">Built as a reference page — edit the topic, prompts, and delivery method to match your setup.</p>
+  </div>
+</footer>
+ 
+<script>
+function copyCode(btn){
+  const pre = btn.parentElement;
+  const text = pre.innerText.replace('Copy','').trim();
+  navigator.clipboard.writeText(text).then(()=>{
+    const old = btn.textContent;
+    btn.textContent = 'Copied';
+    setTimeout(()=>{ btn.textContent = old; }, 1500);
+  });
+}
+</script>
+ 
+</body>
+</html>
